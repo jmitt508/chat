@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
 	my_addr.sin_port = htons(port);
 
 	if (connect(sfd, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) == -1) perror("connect");
-	char name[7];
+	char name[BUFSIZE];
 	char num[2];
 	if(read(sfd, num, 2) == -1) perror("read");
 	sprintf(name, "User %s", num);
@@ -39,7 +39,23 @@ int main(int argc, char* argv[]){
 		fgets(buffer, BUFSIZE, stdin);
 		char quitMsg[BUFSIZE];
 		sprintf(quitMsg, "%s has quit.\n", name);
-		if(strncmp(buffer, "quit\n", 5)==0){
+		if(strncmp(buffer, "name\n", 5) ==0){
+			while(1){
+				printf("Enter a new name: ");
+				char nameBuf[BUFSIZE];
+				fgets(nameBuf, BUFSIZE, stdin);
+				if(strncmp(nameBuf, "\n", 1) != 0){
+					char oldName[BUFSIZE];
+					sprintf(oldName, "%s", name);
+					sprintf(name, "%s", strtok(nameBuf, "\n"));
+					char changeMsg[BUFSIZE];
+					sprintf(changeMsg, "%s has changed their name to %s.\n", oldName, name);
+					if(write(sfd, changeMsg, BUFSIZE) == -1) perror("write");
+					break;
+				}
+			}
+		}
+		else if(strncmp(buffer, "quit\n", 5)==0){
 			int w = write(sfd, quitMsg, BUFSIZE);
 			if(w==-1) perror("write");
 		}
