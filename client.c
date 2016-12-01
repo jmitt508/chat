@@ -17,28 +17,38 @@
 
 int main(int argc, char* argv[]){
 	char* ip = strtok(argv[1], " \0\n");
-	char* port = strtok(argv[2], " \0\n");
-	
-	int sfd = socket(AF_UNIX, SOCK_STREAM, 0);
+	uint16_t port = strtol(strtok(argv[2], " \0\n"), NULL, 10);
+	int sfd = socket(AF_INET, SOCK_STREAM || SOCK_NONBLOCK, 0);
+	struct sockaddr_in my_addr;
+	memset(&my_addr, 0, sizeof(struct sockaddr_in));
+	my_addr.sin_family = AF_INET;
+	inet_aton(ip, &my_addr.sin_addr);
+	my_addr.sin_port = htons(port);
 
-	struct sockaddr_un my_addr;
-	memset(&my_addr, 0, sizeof(struct sockaddr_un));
-	my_addr.sun_family = AF_UNIX;
-//	in.sin_port = htons(&port);
-//	inet_aton(ip, &in.sin_addr);
-	strncpy(my_addr.sun_path, ip, sizeof(my_addr.sun_path) - 1);
-
-	if (connect(sfd, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_un)) == -1) perror("connect");
-
+	if (connect(sfd, (struct sockaddr*) &my_addr, sizeof(struct sockaddr_in)) == -1) perror("connect");
+	char name[7];
+	char num[2];
+	if(read(sfd, num, 2) == -1) perror("read");
+	sprintf(name, "User %s", num);
 	//basic one-way communication
+	char joined[BUFSIZE];
+	sprintf(joined, "%s has connected.\n", name);
+	if(write(sfd, joined, BUFSIZE) == -1) perror("write");
 	char buffer[BUFSIZE];
-	while((strncmp(buffer, "quit", 4) != 0) && (strncmp(buffer, "squit", 5) !=0)){
+	while((strncmp(buffer, "quit\n", 5) != 0) && (strncmp(buffer, "squit", 5) !=0)){
 		fgets(buffer, BUFSIZE, stdin);
-		char quitMsg[15] = "User has quit.\n";
-		if(strncmp(buffer, "quit", 4)==0)
-			int w = write(sfd, quitMsg
-		int w = write(sfd, buffer, BUFSIZE);
-		if(w==-1) perror("write");
+		char quitMsg[BUFSIZE];
+		sprintf(quitMsg, "%s has quit.\n", name);
+		if(strncmp(buffer, "quit\n", 5)==0){
+			int w = write(sfd, quitMsg, BUFSIZE);
+			if(w==-1) perror("write");
+		}
+		else{
+			char toSend[BUFSIZE + 7];
+			sprintf(toSend, "%s: %s", name, buffer);
+			int w = write(sfd, toSend, BUFSIZE+7);
+			if(w==-1) perror("write");
+		}
 	}
 	return 0;
 }
