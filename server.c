@@ -13,9 +13,18 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <stdbool.h>
 
 #define LISTEN_BACKLOG 50
 #define BUFSIZE 150
+
+typedef struct users *user;
+struct users{
+	int id;
+	int num;
+	user next;
+	user prev;
+};
 
 int main(int argc, char* argv[]){
 	char* ip = strtok(argv[1], " \0\n");
@@ -47,13 +56,41 @@ int main(int argc, char* argv[]){
 	
 	peer_addr_size = sizeof(struct sockaddr_in);
 	char buffer[BUFSIZE];
+	int numUsers = 0;
+	printf("%s","here");
+	struct users start;
+	start.id = 0;
+	start.next = NULL;
 	while(1){
 		if(strncmp(buffer,"squit", 5) == 0) break;
 		cfd = accept4(sfd, (struct sockaddr*) &peer_addr, &peer_addr_size, SOCK_NONBLOCK);
 		if(cfd == -1){
-			perror("accept");
-			break;
+                        perror("accept");
+                        break;
+                }
+		bool newUser = true;
+		user nextUser;
+		*nextUser = start;
+		while(1){
+			if(nextUser->id == cfd){
+				newUser = false;
+				break;
+			}else if(nextUser->next != NULL){
+				nextUser = nextUser->next;
+			}else{
+				break;
+			}
 		}
+		if(newUser){
+			user newU;
+			newU = nextUser;
+			newU->id = cfd;
+			newU->next = NULL;
+			newU->prev = nextUser;
+			nextUser->next = newU;
+			numUsers++;
+			newU->num = numUsers;
+		}		
 		FD_SET(cfd, &readSet);
 		if(write(cfd, name, 2) == -1) perror("write");
 		int r=1;
