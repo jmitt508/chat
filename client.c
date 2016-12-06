@@ -38,6 +38,10 @@ void* thread_entry(void* args){//prints all incoming messages to console
 }
 
 int main(int argc, char* argv[]){
+	if(argc<=2){
+		printf("Usage: client <IP address> <port number>\n");
+		return 0;
+	}
 	char* ip = strtok(argv[1], " \0\n");
 	uint16_t port = strtol(strtok(argv[2], " \0\n"), NULL, 10);
 	struct thread_args args[1];

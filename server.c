@@ -69,6 +69,10 @@ void* thread_entry(void* args){//receives incoming messages and passes them to c
 }
 
 int main(int argc, char* argv[]){
+	if(argc<=2){
+		printf("Usage: server <IP address> <port number>\n");
+		return 0;
+	}
 	char* ip = strtok(argv[1], " \0\n");
 	uint16_t port = strtol(strtok(argv[2], " \0\n"), NULL, 10);
 	int sfd, cfd;
